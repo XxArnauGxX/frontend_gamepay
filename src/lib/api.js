@@ -83,4 +83,48 @@ export function addToCart(productId) {
   });
 }
 
-// Más adelante: removeFromCart, updateCartItem, toggleSelectItem, checkoutCart…
+// Quitar un producto del carrito
+export function removeFromCart(productId) {
+  return fetch(`${BASE}/cart/${productId}`, {
+    method: "DELETE",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    },
+  });
+}
+
+// Actualizar cantidad de un producto en el carrito
+export function updateCartItem(productId, quantity) {
+  return fetch(`${BASE}/cart/${productId}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    },
+    body: JSON.stringify({ quantity }),
+  });
+}
+
+// Seleccionar/desseleccionar un producto
+export function toggleCartItem(productId, selected) {
+  return fetch(`${BASE}/cart/${productId}/select`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    },
+    body: JSON.stringify({ selected }),
+  });
+}
+
+// Confirmar compra de productos seleccionados
+export function checkoutCart() {
+  return fetch(`${BASE}/cart/checkout`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${localStorage.getItem("accessToken")}`,
+    },
+  });
+}

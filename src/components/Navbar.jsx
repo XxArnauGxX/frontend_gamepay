@@ -1,12 +1,18 @@
-// src/components/Navbar.jsx
 "use client";
 
 import Link from "next/link";
 import { useContext } from "react";
 import { AuthContext } from "@/context/AuthContext";
+import { CartContext } from "@/context/CartContext";
 
 export default function Navbar() {
   const { isLogged, userEmail, logout } = useContext(AuthContext);
+  const { items } = useContext(CartContext) || { items: [] };
+
+  // Aseguramos que items es siempre un array
+  const totalCount = Array.isArray(items)
+    ? items.reduce((sum, i) => sum + (i.quantity || 0), 0)
+    : 0;
 
   return (
     <nav className="bg-white border-b shadow-sm">
@@ -16,7 +22,7 @@ export default function Navbar() {
           MiEcommerce
         </Link>
 
-        {/* Enlaces */}
+        {/* Enlaces y carrito */}
         <div className="space-x-4 flex items-center">
           {!isLogged ? (
             <>
@@ -30,7 +36,10 @@ export default function Navbar() {
           ) : (
             <>
               <span className="text-gray-700">Hola, {userEmail}</span>
-              <button onClick={logout} className="hover:underline text-red-600">
+              <button
+                onClick={logout}
+                className="hover:underline text-red-600"
+              >
                 Logout
               </button>
             </>
@@ -40,7 +49,7 @@ export default function Navbar() {
           <Link href="/cart" className="relative hover:underline">
             🛒
             <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">
-              0
+              {totalCount}
             </span>
           </Link>
         </div>
