@@ -16,40 +16,71 @@ export const CartContext = createContext();
 const initialState = { items: [], loading: true };
 
 function reducer(state, action) {
+  // Aseguramos que siempre trabajamos con un array
+  const items = Array.isArray(state.items) ? state.items : [];
+
   switch (action.type) {
     case "SET_CART":
-      return { ...state, items: action.payload, loading: false };
-    case "ADD_ITEM":
-      // igual que antes...
-      // …
+      return {
+        ...state,
+        items: Array.isArray(action.payload) ? action.payload : [],
+        loading: false,
+      };
+
+    case "ADD_ITEM": {
+      const exists = items.find(i => i.productId === action.payload.productId);
+      if (exists) {
+        return {
+          ...state,
+          items: items.map(i =>
+            i.productId === action.payload.productId
+              ? { ...i, quantity: i.quantity + 1 }
+              : i
+          ),
+        };
+      } else {
+        return {
+          ...state,
+          items: [
+            ...items,
+            { ...action.payload, quantity: 1, selected: true },
+          ],
+        };
+      }
+    }
+
     case "REMOVE_ITEM":
       return {
         ...state,
-        items: state.items.filter(i => i.productId !== action.payload),
+        items: items.filter(i => i.productId !== action.payload),
       };
+
     case "UPDATE_QUANTITY":
       return {
         ...state,
-        items: state.items.map(i =>
+        items: items.map(i =>
           i.productId === action.payload.productId
             ? { ...i, quantity: action.payload.quantity }
             : i
         ),
       };
+
     case "TOGGLE_ITEM":
       return {
         ...state,
-        items: state.items.map(i =>
+        items: items.map(i =>
           i.productId === action.payload.productId
             ? { ...i, selected: action.payload.selected }
             : i
         ),
       };
+
     case "CLEAR_SELECTED":
       return {
         ...state,
-        items: state.items.filter(i => !i.selected),
+        items: items.filter(i => !i.selected),
       };
+
     default:
       return state;
   }
@@ -69,7 +100,9 @@ export function CartProvider({ children }) {
         const res = await getCart();
         const data = await res.json();
         dispatch({ type: "SET_CART", payload: data.items });
-      } catch (e) { console.error(e); }
+      } catch (e) {
+        console.error("Error cargando carrito:", e);
+      }
     }
     load();
   }, [accessToken]);
@@ -78,18 +111,28 @@ export function CartProvider({ children }) {
     await addToCart(productId);
     dispatch({ type: "ADD_ITEM", payload: { productId } });
   };
+
   const removeItem = async productId => {
     await removeFromCart(productId);
     dispatch({ type: "REMOVE_ITEM", payload: productId });
   };
+
   const updateQuantity = async (productId, quantity) => {
     await updateCartItem(productId, quantity);
-    dispatch({ type: "UPDATE_QUANTITY", payload: { productId, quantity } });
+    dispatch({
+      type: "UPDATE_QUANTITY",
+      payload: { productId, quantity },
+    });
   };
+
   const toggleItem = async (productId, selected) => {
     await toggleCartItem(productId, selected);
-    dispatch({ type: "TOGGLE_ITEM", payload: { productId, selected } });
+    dispatch({
+      type: "TOGGLE_ITEM",
+      payload: { productId, selected },
+    });
   };
+
   const checkout = async () => {
     await checkoutCart();
     dispatch({ type: "CLEAR_SELECTED" });
