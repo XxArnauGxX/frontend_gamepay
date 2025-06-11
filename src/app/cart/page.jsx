@@ -1,56 +1,45 @@
+// src/app/cart/page.jsx
 "use client";
 
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { CartContext } from "@/context/CartContext";
+import { AuthContext } from "@/context/AuthContext";
+import CartItem from "@/components/CartItem";
 
 export default function CartPage() {
-  const {
-    items,
-    loading,
-    removeItem,
-    updateQuantity,
-    toggleItem,
-    checkout,
-  } = useContext(CartContext);
+  const router = useRouter();
+  const { isLogged } = useContext(AuthContext);
+  const { items, loading, removeItem, updateQuantity, toggleItem, checkout } =
+    useContext(CartContext);
 
+  // Si no estás logueado, redirige al login
+  useEffect(() => {
+    if (!isLogged) {
+      router.push("/login");
+    }
+  }, [isLogged, router]);
+
+  if (!isLogged) return null;
   if (loading) return <p>Cargando carrito…</p>;
   if (items.length === 0) return <p>Tu carrito está vacío.</p>;
 
   const total = items
-    .filter(i => i.selected)
+    .filter((i) => i.selected)
     .reduce((sum, i) => sum + i.quantity * i.price, 0);
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
       <h1 className="text-2xl mb-4">Tu carrito</h1>
       <ul>
-        {items.map(item => (
-          <li key={item.productId} className="flex items-center mb-4">
-            <input
-              type="checkbox"
-              checked={item.selected}
-              onChange={e => toggleItem(item.productId, e.target.checked)}
-              className="mr-2"
-            />
-            <span className="flex-1">
-              {item.name} — {item.price}€ ×{" "}
-              <input
-                type="number"
-                min="1"
-                value={item.quantity}
-                onChange={e =>
-                  updateQuantity(item.productId, Number(e.target.value))
-                }
-                className="w-16 border rounded px-2"
-              />
-            </span>
-            <button
-              onClick={() => removeItem(item.productId)}
-              className="ml-4 text-red-600 hover:underline"
-            >
-              Eliminar
-            </button>
-          </li>
+        {items.map((item) => (
+          <CartItem
+            key={item.productId}
+            item={item}
+            removeItem={removeItem}
+            updateQuantity={updateQuantity}
+            toggleItem={toggleItem}
+          />
         ))}
       </ul>
 

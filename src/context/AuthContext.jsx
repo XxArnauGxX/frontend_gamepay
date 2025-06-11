@@ -1,66 +1,59 @@
+// src/context/AuthContext.jsx
 "use client";
 
-import { createContext, useState, useEffect, useCallback } from "react";
+import { createContext, useState, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { refreshToken as apiRefresh, logoutUser } from "@/lib/api";
+import { refreshToken as apiRefresh, logoutUser as apiLogout } from "@/lib/api";
 
 export const AuthContext = createContext();
 
 export function AuthProvider({ children }) {
   const router = useRouter();
 
-  const [accessToken, setAccessToken] = useState(null);
-  const [refreshToken, setRefreshTokenState] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
+  // Leemos tokens y email de localStorage en la inicialización
+  const [accessToken, setAccessToken] = useState(
+    () => localStorage.getItem("accessToken")
+  );
+  const [refreshToken, setRefreshToken] = useState(
+    () => localStorage.getItem("refreshToken")
+  );
+  const [userEmail, setUserEmail] = useState(
+    () => localStorage.getItem("userEmail")
+  );
 
-  // Al montar, cargamos de localStorage
-  useEffect(() => {
-    const at = localStorage.getItem("accessToken");
-    const rt = localStorage.getItem("refreshToken");
-    const email = localStorage.getItem("userEmail");
-    if (at && rt) {
-      setAccessToken(at);
-      setRefreshTokenState(rt);
-      setUserEmail(email);
-    }
-  }, []);
-
-  // Guardar tokens en estado y localStorage
   const saveTokens = (at, rt, email) => {
     setAccessToken(at);
-    setRefreshTokenState(rt);
+    setRefreshToken(rt);
     setUserEmail(email);
     localStorage.setItem("accessToken", at);
     localStorage.setItem("refreshToken", rt);
     localStorage.setItem("userEmail", email);
   };
 
-  // Función de login: recibe { accessToken, refreshToken, user: { email } }
   const login = ({ accessToken: at, refreshToken: rt, user }) => {
     saveTokens(at, rt, user.email);
     router.push("/");
   };
 
-  // Función de logout
-  const logout = async () => {
+  const logout = useCallback(async () => {
     try {
-      await logoutUser();
+      // Llamada corregida a la API (cabecera en apiLogout)
+      await apiLogout(refreshToken);
     } catch (e) {
       console.error("Error al hacer logout:", e);
     } finally {
       setAccessToken(null);
-      setRefreshTokenState(null);
+      setRefreshToken(null);
       setUserEmail(null);
       localStorage.clear();
       router.push("/login");
     }
-  };
+  }, [refreshToken, router]);
 
-  // Función para refrescar tokens
   const refresh = useCallback(async () => {
     if (!refreshToken) return;
     try {
-      const res = await apiRefresh();
+      const res = await apiRefresh(refreshToken);
       const data = await res.json();
       if (res.ok) {
         saveTokens(data.accessToken, data.refreshToken, userEmail);
@@ -70,7 +63,7 @@ export function AuthProvider({ children }) {
     } catch {
       logout();
     }
-  }, [refreshToken, userEmail]);
+  }, [refreshToken, userEmail, logout]);
 
   return (
     <AuthContext.Provider

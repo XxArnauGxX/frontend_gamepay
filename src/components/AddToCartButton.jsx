@@ -1,17 +1,30 @@
+// src/components/AddToCartButton.jsx
 "use client";
 
-import { useState, useContext } from "react";
+import { useState, useContext, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { CartContext } from "@/context/CartContext";
+import { AuthContext } from "@/context/AuthContext";
+import { memo } from "react";
 
-export default function AddToCartButton({ productId }) {
+function AddToCartButtonComponent({ productId }) {
+  const router = useRouter();
   const { addItem } = useContext(CartContext);
+  const { isLogged } = useContext(AuthContext);
   const [loading, setLoading] = useState(false);
 
-  const handleAdd = async () => {
+  const handleAdd = useCallback(async () => {
+    if (!isLogged) {
+      // Redirige al login si no estás autenticado
+      return router.push("/login");
+    }
     setLoading(true);
-    await addItem(productId);
-    setLoading(false);
-  };
+    try {
+      await addItem(productId);
+    } finally {
+      setLoading(false);
+    }
+  }, [addItem, productId, isLogged, router]);
 
   return (
     <button
@@ -23,3 +36,5 @@ export default function AddToCartButton({ productId }) {
     </button>
   );
 }
+
+export default memo(AddToCartButtonComponent);

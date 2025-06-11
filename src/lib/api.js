@@ -22,23 +22,23 @@ export function loginUser(creds) {
 }
 
 // Refresh de tokens
-export function refreshToken() {
+export function refreshToken(rt) {
   return fetch(`${BASE}/users/refresh`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("refreshToken")}`,
+      "x-refresh-token": rt,
     },
   });
 }
 
 // Logout de usuario
-export function logoutUser() {
+export function logoutUser(rt) {
   return fetch(`${BASE}/users/logout`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
-      Authorization: `Bearer ${localStorage.getItem("refreshToken")}`,
+      "x-refresh-token": rt,
     },
   });
 }
