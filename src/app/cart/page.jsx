@@ -10,23 +10,31 @@ import CartItem from "@/components/CartItem";
 export default function CartPage() {
   const router = useRouter();
   const { isLogged } = useContext(AuthContext);
-  const { items, loading, removeItem, updateQuantity, toggleItem, checkout } =
-    useContext(CartContext);
+  const {
+    items,
+    loading,
+    removeItem,
+    updateQuantity,
+    toggleItem,
+    checkout,
+  } = useContext(CartContext);
 
-  // Si no estás logueado, redirige al login
   useEffect(() => {
-    if (!isLogged) {
-      router.push("/login");
-    }
+    if (!isLogged) router.push("/login");
   }, [isLogged, router]);
 
   if (!isLogged) return null;
   if (loading) return <p>Cargando carrito…</p>;
-  if (items.length === 0) return <p>Tu carrito está vacío.</p>;
+  if (!items.length) return <p>Tu carrito está vacío.</p>;
 
+  // Garantizar que price y quantity existan
   const total = items
     .filter((i) => i.selected)
-    .reduce((sum, i) => sum + i.quantity * i.price, 0);
+    .reduce(
+      (sum, i) =>
+        sum + (i.quantity || 0) * (typeof i.price === "number" ? i.price : 0),
+      0
+    );
 
   return (
     <div className="max-w-2xl mx-auto bg-white p-6 rounded shadow">
@@ -42,7 +50,6 @@ export default function CartPage() {
           />
         ))}
       </ul>
-
       <div className="mt-6 flex justify-between items-center">
         <span className="text-lg font-semibold">
           Total: {total.toFixed(2)}€

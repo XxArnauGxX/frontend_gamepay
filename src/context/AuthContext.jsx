@@ -1,7 +1,6 @@
-// src/context/AuthContext.jsx
 "use client";
 
-import { createContext, useState, useCallback } from "react";
+import { createContext, useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { refreshToken as apiRefresh, logoutUser as apiLogout } from "@/lib/api";
 
@@ -10,16 +9,23 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const router = useRouter();
 
-  // Leemos tokens y email de localStorage en la inicialización
-  const [accessToken, setAccessToken] = useState(
-    () => localStorage.getItem("accessToken")
-  );
-  const [refreshToken, setRefreshToken] = useState(
-    () => localStorage.getItem("refreshToken")
-  );
-  const [userEmail, setUserEmail] = useState(
-    () => localStorage.getItem("userEmail")
-  );
+  // Inicial: null (nunca usar localStorage aquí)
+  const [accessToken, setAccessToken] = useState(null);
+  const [refreshToken, setRefreshToken] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
+  const isLogged = !!accessToken;
+
+  // Al montarse el cliente, leemos localStorage
+  useEffect(() => {
+    const at = localStorage.getItem("accessToken");
+    const rt = localStorage.getItem("refreshToken");
+    const email = localStorage.getItem("userEmail");
+    if (at && rt && email) {
+      setAccessToken(at);
+      setRefreshToken(rt);
+      setUserEmail(email);
+    }
+  }, []);
 
   const saveTokens = (at, rt, email) => {
     setAccessToken(at);
@@ -37,7 +43,6 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      // Llamada corregida a la API (cabecera en apiLogout)
       await apiLogout(refreshToken);
     } catch (e) {
       console.error("Error al hacer logout:", e);
@@ -67,15 +72,7 @@ export function AuthProvider({ children }) {
 
   return (
     <AuthContext.Provider
-      value={{
-        accessToken,
-        refreshToken,
-        userEmail,
-        isLogged: !!accessToken,
-        login,
-        logout,
-        refresh,
-      }}
+      value={{ accessToken, refreshToken, userEmail, isLogged, login, logout, refresh }}
     >
       {children}
     </AuthContext.Provider>

@@ -1,8 +1,14 @@
+// src/app/product/[id]/page.jsx
 import { getProductById } from "@/lib/api";
 import AddToCartButton from "@/components/AddToCartButton";
 
-export default async function ProductPage({ params }) {
-  const res = await getProductById(params.id);
+export default async function ProductPage(props) {
+  // Esperamos a que params esté disponible
+  const { params } = await props;
+  const { id } = params;
+
+  // Llamamos al backend
+  const res = await getProductById(id);
   if (!res.ok) {
     return <p>Error al cargar el producto.</p>;
   }

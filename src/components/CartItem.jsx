@@ -9,7 +9,13 @@ function CartItemComponent({
   updateQuantity,
   toggleItem,
 }) {
-  const { productId, name, price, quantity, selected } = item;
+  const {
+    productId,
+    name = "–",
+    price = 0,      // valor por defecto
+    quantity = 1,
+    selected = false,
+  } = item;
 
   const onRemove = useCallback(() => {
     removeItem(productId);

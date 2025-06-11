@@ -1,11 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useContext } from "react";
 import { useRouter } from "next/navigation";
 import { loginUser } from "@/lib/api";
+import { AuthContext } from "@/context/AuthContext";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { login } = useContext(AuthContext);
   const [form, setForm] = useState({ email: "", password: "" });
   const [error, setError] = useState("");
 
@@ -24,11 +26,14 @@ export default function LoginPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.message || "Error en login");
 
-      // guardamos tokens y redirigimos
-      localStorage.setItem("accessToken", data.accessToken);
-      localStorage.setItem("refreshToken", data.refreshToken);
-      localStorage.setItem("userEmail", data.user.email);
-      router.push("/");
+      // Usamos la función del contexto en lugar de localStorage directo
+      login({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: data.user,
+      });
+
+      // No hace falta router.push("/") aquí, lo hace login()
     } catch (err) {
       setError(err.message);
     }
