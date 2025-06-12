@@ -10,6 +10,7 @@ import {
   checkoutCart,
 } from "@/lib/api";
 import { AuthContext } from "./AuthContext";
+import { useNotifications } from "@/components/Notifications";
 
 export const CartContext = createContext();
 
@@ -43,7 +44,11 @@ function reducer(state, action) {
           ...state,
           items: [
             ...items,
-            { ...action.payload, quantity: 1, selected: true },
+            { 
+              ...action.payload,
+              quantity: 1, 
+              selected: true 
+            },
           ],
         };
       }
@@ -88,6 +93,7 @@ function reducer(state, action) {
 
 export function CartProvider({ children }) {
   const { accessToken } = useContext(AuthContext);
+  const { addNotification } = useNotifications();
   const [state, dispatch] = useReducer(reducer, initialState);
 
   useEffect(() => {
@@ -102,40 +108,79 @@ export function CartProvider({ children }) {
         dispatch({ type: "SET_CART", payload: data.items });
       } catch (e) {
         console.error("Error cargando carrito:", e);
+        addNotification("Error al cargar el carrito", "error");
       }
     }
     load();
-  }, [accessToken]);
+  }, [accessToken, addNotification]);
 
-  const addItem = async productId => {
-    await addToCart(productId);
-    dispatch({ type: "ADD_ITEM", payload: { productId } });
+  const addItem = async (productId, product) => {
+    try {
+      await addToCart(productId);
+      dispatch({ 
+        type: "ADD_ITEM", 
+        payload: { 
+          productId,
+          name: product.name,
+          price: product.price
+        } 
+      });
+      addNotification("Producto añadido al carrito", "success");
+    } catch (error) {
+      addNotification("Error al añadir el producto", "error");
+    }
   };
 
   const removeItem = async productId => {
-    await removeFromCart(productId);
-    dispatch({ type: "REMOVE_ITEM", payload: productId });
+    try {
+      await removeFromCart(productId);
+      dispatch({ type: "REMOVE_ITEM", payload: productId });
+      addNotification("Producto eliminado del carrito", "success");
+    } catch (error) {
+      addNotification("Error al eliminar el producto", "error");
+    }
   };
 
   const updateQuantity = async (productId, quantity) => {
-    await updateCartItem(productId, quantity);
-    dispatch({
-      type: "UPDATE_QUANTITY",
-      payload: { productId, quantity },
-    });
+    try {
+      const res = await updateCartItem(productId, quantity);
+      if (!res.ok) {
+        throw new Error("Error al actualizar la cantidad");
+      }
+      dispatch({
+        type: "UPDATE_QUANTITY",
+        payload: { productId, quantity },
+      });
+      addNotification("Cantidad actualizada", "success");
+    } catch (error) {
+      addNotification("Error al actualizar la cantidad", "error");
+      // Recargar el carrito para asegurar sincronización
+      const res = await getCart();
+      const data = await res.json();
+      dispatch({ type: "SET_CART", payload: data.items });
+    }
   };
 
   const toggleItem = async (productId, selected) => {
-    await toggleCartItem(productId, selected);
-    dispatch({
-      type: "TOGGLE_ITEM",
-      payload: { productId, selected },
-    });
+    try {
+      await toggleCartItem(productId, selected);
+      dispatch({
+        type: "TOGGLE_ITEM",
+        payload: { productId, selected },
+      });
+    } catch (error) {
+      addNotification("Error al actualizar la selección", "error");
+    }
   };
 
   const checkout = async () => {
-    await checkoutCart();
-    dispatch({ type: "CLEAR_SELECTED" });
+    try {
+      await checkoutCart();
+      dispatch({ type: "CLEAR_SELECTED" });
+      addNotification("Compra realizada con éxito", "success");
+    } catch (error) {
+      addNotification("Error al procesar la compra", "error");
+    }
   };
 
   return (

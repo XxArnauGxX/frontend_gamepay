@@ -7,7 +7,7 @@ import { CartContext } from "@/context/CartContext";
 import { AuthContext } from "@/context/AuthContext";
 import { memo } from "react";
 
-function AddToCartButtonComponent({ productId }) {
+function AddToCartButtonComponent({ product }) {
   const router = useRouter();
   const { addItem } = useContext(CartContext);
   const { isLogged } = useContext(AuthContext);
@@ -20,11 +20,11 @@ function AddToCartButtonComponent({ productId }) {
     }
     setLoading(true);
     try {
-      await addItem(productId);
+      await addItem(product._id, product);
     } finally {
       setLoading(false);
     }
-  }, [addItem, productId, isLogged, router]);
+  }, [addItem, product, isLogged, router]);
 
   return (
     <button

@@ -43,7 +43,9 @@ export function AuthProvider({ children }) {
 
   const logout = useCallback(async () => {
     try {
-      await apiLogout(refreshToken);
+      if (refreshToken) {
+        await apiLogout(refreshToken);
+      }
     } catch (e) {
       console.error("Error al hacer logout:", e);
     } finally {
@@ -56,19 +58,41 @@ export function AuthProvider({ children }) {
   }, [refreshToken, router]);
 
   const refresh = useCallback(async () => {
-    if (!refreshToken) return;
+    if (!refreshToken) {
+      logout();
+      return;
+    }
+
     try {
       const res = await apiRefresh(refreshToken);
-      const data = await res.json();
-      if (res.ok) {
-        saveTokens(data.accessToken, data.refreshToken, userEmail);
-      } else {
-        logout();
+      if (!res.ok) {
+        throw new Error("Refresh token invalid");
       }
-    } catch {
+      const data = await res.json();
+      saveTokens(data.accessToken, data.refreshToken, userEmail);
+    } catch (error) {
+      console.error("Error refreshing token:", error);
       logout();
     }
   }, [refreshToken, userEmail, logout]);
+
+  // Verificar tokens periódicamente
+  useEffect(() => {
+    if (!isLogged) return;
+
+    const checkTokens = async () => {
+      try {
+        await refresh();
+      } catch (error) {
+        console.error("Error checking tokens:", error);
+        logout();
+      }
+    };
+
+    // Verificar cada 4 minutos (los tokens suelen durar 5)
+    const interval = setInterval(checkTokens, 4 * 60 * 1000);
+    return () => clearInterval(interval);
+  }, [isLogged, refresh, logout]);
 
   return (
     <AuthContext.Provider

@@ -3,13 +3,15 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { registerUser } from "@/lib/api";
+import { useNotifications } from "@/components/Notifications";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { addNotification } = useNotifications();
   const [form, setForm] = useState({
     email: "",
     password: "",
-    confirmPassword: "",  // clave corregida
+    confirmPassword: "",
     name: "",
     surname: "",
     address: "",
@@ -61,13 +63,13 @@ export default function RegisterPage() {
       const res = await registerUser(form);
       if (!res.ok) {
         const err = await res.json();
-        // Puedes mostrar err.errors (array) o err.error (string)
-        alert(err.error || err.errors.join("\n"));
+        addNotification(err.error || err.errors.join("\n"), "error");
         return;
       }
+      addNotification("Registro exitoso. Redirigiendo al login...", "success");
       router.push("/login");
     } catch (err) {
-      alert("Error al registrar: " + err.message);
+      addNotification("Error al registrar: " + err.message, "error");
     }
   };
 
@@ -80,7 +82,7 @@ export default function RegisterPage() {
           { label: "Contraseña", name: "password", type: "password" },
           {
             label: "Confirmar contraseña",
-            name: "confirmPassword", // aquí también
+            name: "confirmPassword",
             type: "password",
           },
           { label: "Nombre", name: "name", type: "text" },

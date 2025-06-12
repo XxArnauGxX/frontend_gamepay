@@ -3,9 +3,8 @@ import { getProductById } from "@/lib/api";
 import AddToCartButton from "@/components/AddToCartButton";
 
 export default async function ProductPage(props) {
-  // Esperamos a que params esté disponible
-  const { params } = await props;
-  const { id } = params;
+  const params = await props.params;
+  const id = params.id;
 
   // Llamamos al backend
   const res = await getProductById(id);
@@ -25,7 +24,7 @@ export default async function ProductPage(props) {
       <p className="text-lg mb-2">Precio: {product.price.toFixed(2)}€</p>
       <p className="mb-4">{product.description}</p>
       {/* Botón client para añadir al carrito */}
-      <AddToCartButton productId={product._id} />
+      <AddToCartButton product={product} />
     </div>
   );
 }
