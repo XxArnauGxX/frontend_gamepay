@@ -9,35 +9,38 @@ export const AuthContext = createContext();
 export function AuthProvider({ children }) {
   const router = useRouter();
 
-  // Inicial: null (nunca usar localStorage aquí)
   const [accessToken, setAccessToken] = useState(null);
   const [refreshToken, setRefreshToken] = useState(null);
   const [userEmail, setUserEmail] = useState(null);
+  const [userName, setUserName] = useState(null);
   const isLogged = !!accessToken;
 
-  // Al montarse el cliente, leemos localStorage
   useEffect(() => {
     const at = localStorage.getItem("accessToken");
     const rt = localStorage.getItem("refreshToken");
     const email = localStorage.getItem("userEmail");
+    const name = localStorage.getItem("userName");
     if (at && rt && email) {
       setAccessToken(at);
       setRefreshToken(rt);
       setUserEmail(email);
+      setUserName(name);
     }
   }, []);
 
-  const saveTokens = (at, rt, email) => {
+  const saveTokens = (at, rt, email, name) => {
     setAccessToken(at);
     setRefreshToken(rt);
     setUserEmail(email);
+    setUserName(name);
     localStorage.setItem("accessToken", at);
     localStorage.setItem("refreshToken", rt);
     localStorage.setItem("userEmail", email);
+    localStorage.setItem("userName", name);
   };
 
   const login = ({ accessToken: at, refreshToken: rt, user }) => {
-    saveTokens(at, rt, user.email);
+    saveTokens(at, rt, user.email, user.name);
     router.push("/");
   };
 
@@ -52,6 +55,7 @@ export function AuthProvider({ children }) {
       setAccessToken(null);
       setRefreshToken(null);
       setUserEmail(null);
+      setUserName(null);
       localStorage.clear();
       router.push("/login");
     }
@@ -69,14 +73,19 @@ export function AuthProvider({ children }) {
         throw new Error("Refresh token invalid");
       }
       const data = await res.json();
-      saveTokens(data.accessToken, data.refreshToken, userEmail);
+      if (!res.ok) throw new Error(data.message || "Error en login");
+
+      login({
+        accessToken: data.accessToken,
+        refreshToken: data.refreshToken,
+        user: data.user,
+      });
     } catch (error) {
       console.error("Error refreshing token:", error);
       logout();
     }
-  }, [refreshToken, userEmail, logout]);
+  }, [refreshToken, userEmail, userName, logout, login]);
 
-  // Verificar tokens periódicamente
   useEffect(() => {
     if (!isLogged) return;
 
@@ -89,14 +98,22 @@ export function AuthProvider({ children }) {
       }
     };
 
-    // Verificar cada 4 minutos (los tokens suelen durar 5)
     const interval = setInterval(checkTokens, 4 * 60 * 1000);
     return () => clearInterval(interval);
   }, [isLogged, refresh, logout]);
 
   return (
     <AuthContext.Provider
-      value={{ accessToken, refreshToken, userEmail, isLogged, login, logout, refresh }}
+      value={{
+        accessToken,
+        refreshToken,
+        userEmail,
+        userName,
+        isLogged,
+        login,
+        logout,
+        refresh,
+      }}
     >
       {children}
     </AuthContext.Provider>

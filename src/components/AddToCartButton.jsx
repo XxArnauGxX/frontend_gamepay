@@ -1,4 +1,3 @@
-// src/components/AddToCartButton.jsx
 "use client";
 
 import { useState, useContext, useCallback } from "react";
@@ -15,7 +14,6 @@ function AddToCartButtonComponent({ product }) {
 
   const handleAdd = useCallback(async () => {
     if (!isLogged) {
-      // Redirige al login si no estás autenticado
       return router.push("/login");
     }
     setLoading(true);

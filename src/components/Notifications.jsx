@@ -9,9 +9,9 @@ export function NotificationsProvider({ children }) {
 
   const addNotification = useCallback((message, type = "info") => {
     const id = Date.now();
-    setNotifications(prev => [...prev, { id, message, type }]);
+    setNotifications((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setNotifications(prev => prev.filter(n => n.id !== id));
+      setNotifications((prev) => prev.filter((n) => n.id !== id));
     }, 3000);
   }, []);
 
@@ -41,7 +41,9 @@ export function NotificationsProvider({ children }) {
 export function useNotifications() {
   const context = useContext(NotificationsContext);
   if (!context) {
-    throw new Error("useNotifications must be used within a NotificationsProvider");
+    throw new Error(
+      "useNotifications must be used within a NotificationsProvider"
+    );
   }
   return context;
-} 
+}

@@ -17,7 +17,6 @@ export const CartContext = createContext();
 const initialState = { items: [], loading: true };
 
 function reducer(state, action) {
-  // Aseguramos que siempre trabajamos con un array
   const items = Array.isArray(state.items) ? state.items : [];
 
   switch (action.type) {
@@ -29,11 +28,13 @@ function reducer(state, action) {
       };
 
     case "ADD_ITEM": {
-      const exists = items.find(i => i.productId === action.payload.productId);
+      const exists = items.find(
+        (i) => i.productId === action.payload.productId
+      );
       if (exists) {
         return {
           ...state,
-          items: items.map(i =>
+          items: items.map((i) =>
             i.productId === action.payload.productId
               ? { ...i, quantity: i.quantity + 1 }
               : i
@@ -44,10 +45,10 @@ function reducer(state, action) {
           ...state,
           items: [
             ...items,
-            { 
+            {
               ...action.payload,
-              quantity: 1, 
-              selected: true 
+              quantity: 1,
+              selected: true,
             },
           ],
         };
@@ -57,13 +58,13 @@ function reducer(state, action) {
     case "REMOVE_ITEM":
       return {
         ...state,
-        items: items.filter(i => i.productId !== action.payload),
+        items: items.filter((i) => i.productId !== action.payload),
       };
 
     case "UPDATE_QUANTITY":
       return {
         ...state,
-        items: items.map(i =>
+        items: items.map((i) =>
           i.productId === action.payload.productId
             ? { ...i, quantity: action.payload.quantity }
             : i
@@ -73,7 +74,7 @@ function reducer(state, action) {
     case "TOGGLE_ITEM":
       return {
         ...state,
-        items: items.map(i =>
+        items: items.map((i) =>
           i.productId === action.payload.productId
             ? { ...i, selected: action.payload.selected }
             : i
@@ -83,7 +84,7 @@ function reducer(state, action) {
     case "CLEAR_SELECTED":
       return {
         ...state,
-        items: items.filter(i => !i.selected),
+        items: items.filter((i) => !i.selected),
       };
 
     default:
@@ -105,7 +106,15 @@ export function CartProvider({ children }) {
       try {
         const res = await getCart();
         const data = await res.json();
-        dispatch({ type: "SET_CART", payload: data.items });
+        const transformedItems = data.map((item) => ({
+          productId: item.productId._id,
+          name: item.productId.title,
+          price: item.productId.price,
+          image: item.productId.image,
+          quantity: item.quantity,
+          selected: item.selected,
+        }));
+        dispatch({ type: "SET_CART", payload: transformedItems });
       } catch (e) {
         console.error("Error cargando carrito:", e);
         addNotification("Error al cargar el carrito", "error");
@@ -117,13 +126,14 @@ export function CartProvider({ children }) {
   const addItem = async (productId, product) => {
     try {
       await addToCart(productId);
-      dispatch({ 
-        type: "ADD_ITEM", 
-        payload: { 
+      dispatch({
+        type: "ADD_ITEM",
+        payload: {
           productId,
-          name: product.name,
-          price: product.price
-        } 
+          name: product.title,
+          price: product.price,
+          image: product.image,
+        },
       });
       addNotification("Producto añadido al carrito", "success");
     } catch (error) {
@@ -131,7 +141,7 @@ export function CartProvider({ children }) {
     }
   };
 
-  const removeItem = async productId => {
+  const removeItem = async (productId) => {
     try {
       await removeFromCart(productId);
       dispatch({ type: "REMOVE_ITEM", payload: productId });
@@ -154,7 +164,6 @@ export function CartProvider({ children }) {
       addNotification("Cantidad actualizada", "success");
     } catch (error) {
       addNotification("Error al actualizar la cantidad", "error");
-      // Recargar el carrito para asegurar sincronización
       const res = await getCart();
       const data = await res.json();
       dispatch({ type: "SET_CART", payload: data.items });
